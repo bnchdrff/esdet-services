@@ -9,6 +9,8 @@ function _taxonomy_resource_definition() {
     return array();
   }
 
+  drupal_load('module', 'esdportal_api');
+
   return array(
     'taxonomy_term' => array(
       'operations' => array(
@@ -312,6 +314,14 @@ function _taxonomy_resource_definition() {
               'default value' => 0,
               'optional'     => TRUE,
             ),
+            array(
+              'name' => 'flatten_fields',
+              'type' => 'int',
+              'description' => 'Remove localization structure from fields if true',
+              'source' => array('data' => 'flatten_fields'),
+              'optional' => TRUE,
+              'default value' => 0,
+            ),
           ),
         ),
       ),
@@ -481,12 +491,19 @@ function _taxonomy_vocabulary_resource_delete($vid) {
 /**
  * Services interface to taxonomy_get_tree().
  *
+ * @param $flatten_fields
+ *   If set, de-drupalize output.
  * @see taxonomy_get_tree()
  */
-function taxonomy_service_get_tree($vid, $parent = 0, $max_depth = NULL, $load_entities = 0) {
+function taxonomy_service_get_tree($vid, $parent = 0, $max_depth = NULL, $load_entities = 0, $flatten_fields = FALSE) {
   $terms = taxonomy_get_tree($vid, $parent, $max_depth, $load_entities);
   if (empty($terms)) {
     return services_error(t('No vocabulary with id @vid found.', array('@vid' => $vid)), 404);
+  }
+  if ($flatten_fields) {
+    foreach ($terms as &$term) {
+      _esdportal_api_flatten_entity_fields('taxonomy_term', $term);
+    }
   }
   return $terms;
 }
