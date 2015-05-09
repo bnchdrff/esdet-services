@@ -1,6 +1,10 @@
 <?php
 
 function _node_resource_definition() {
+
+  // make esdportal api functions available
+  drupal_load('module', 'esdportal_api');
+
   $node_resource = array(
     'node' => array(
       'operations' => array(
@@ -15,6 +19,22 @@ function _node_resource_definition() {
               'source' => array('path' => 0),
               'type' => 'int',
               'description' => 'The nid of the node to retrieve',
+            ),
+            array(
+              'name' => 'flatten_fields',
+              'type' => 'int',
+              'description' => 'Remove localization structure from fields if true',
+              'source' => array('param' => 'flatten_fields'),
+              'optional' => TRUE,
+              'default value' => 0,
+            ),
+            array(
+              'name' => 'include_option_labels',
+              'type' => 'int',
+              'description' => 'Include human-readable option labels as well as machine codes for multivalue text fields',
+              'source' => array('param' => 'include_option_labels'),
+              'optional' => TRUE,
+              'default value' => 0,
             ),
           ),
           'access callback' => '_node_resource_access',
@@ -244,12 +264,16 @@ function _node_resource_definition() {
  *
  * @param $nid
  *   NID of the node we want to return.
+ * @param $flatten_fields
+ *   If set, de-drupalize output.
+ * @param $include_option_labels
+ *   If set, include human-readable option labels as well as machine codes for multivalue text fields.
  * @return
  *   Node object or FALSE if not found.
  *
  * @see node_load()
  */
-function _node_resource_retrieve($nid) {
+function _node_resource_retrieve($nid, $flatten_fields = FALSE, $include_option_labels = FALSE) {
   $node = node_load($nid);
 
   if ($node) {
@@ -261,6 +285,27 @@ function _node_resource_retrieve($nid) {
   }
   //Lets check field_permissions
   $node = services_field_permissions_clean('view', 'node', $node);
+
+  // include option labels for multivalue fields
+  if ($include_option_labels) {
+    $bundle = field_extract_bundle('node', $node);
+    $clone_wrapper = entity_metadata_wrapper('node', $node);
+    foreach (field_info_instances('node', 'school_profile') as $field_name => $instance) {
+      if ($clone_wrapper->{$field_name}->type() == 'list<text>') {
+        $options = $clone_wrapper->{$field_name}->optionsList();
+        $new_value = [];
+        foreach ($clone_wrapper->{$field_name}->value() as $value) {
+          $new_value[] = ['value' => $value, 'option_label' => $options[$value]];
+        }
+      }
+    }
+  }
+
+  // flatten fields
+  if ($flatten_fields) {
+    _esdportal_api_flatten_entity_fields('node', $node);
+  }
+
   return $node;
 }
 

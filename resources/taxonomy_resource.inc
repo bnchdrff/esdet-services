@@ -9,6 +9,7 @@ function _taxonomy_resource_definition() {
     return array();
   }
 
+  // make esdportal api functions available
   drupal_load('module', 'esdportal_api');
 
   return array(
