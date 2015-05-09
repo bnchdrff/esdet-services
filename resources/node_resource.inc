@@ -297,6 +297,7 @@ function _node_resource_retrieve($nid, $flatten_fields = FALSE, $include_option_
         foreach ($clone_wrapper->{$field_name}->value() as $value) {
           $new_value[] = ['value' => $value, 'option_label' => $options[$value]];
         }
+        $clone_wrapper->{$field_name}->set($new_value);
       }
     }
   }
