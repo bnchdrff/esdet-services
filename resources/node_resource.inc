@@ -290,7 +290,7 @@ function _node_resource_retrieve($nid, $flatten_fields = FALSE, $include_option_
   if ($include_option_labels) {
     $bundle = field_extract_bundle('node', $node);
     $clone_wrapper = entity_metadata_wrapper('node', $node);
-    foreach (field_info_instances('node', 'school_profile') as $field_name => $instance) {
+    foreach (field_info_instances('node', $node->type) as $field_name => $instance) {
       if ($clone_wrapper->{$field_name}->type() == 'list<text>') {
         $options = $clone_wrapper->{$field_name}->optionsList();
         $new_value = [];
